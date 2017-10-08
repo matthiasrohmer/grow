@@ -1,6 +1,7 @@
-import collections
 from babel.messages import pofile
+from xml import etree
 import cStringIO
+import collections
 import copy
 import errno
 import os
@@ -50,6 +51,9 @@ class Importer(object):
             raise Error('Not found: {}'.format(path))
 
     def import_path(self, path, locale=None):
+        if path.endswith('.xmb'):
+            self._validate_path(path)
+            return self.import_xmb_file(path)
         if path.endswith('.zip'):
             self._validate_path(path)
             return self.import_zip_file(path)
@@ -60,6 +64,26 @@ class Importer(object):
             return self.import_dir(path)
         else:
             raise Error('Must import a .zip file, .po file, or directory.')
+
+    def import_xmb_file(self, path):
+        dir_path = os.path.dirname(path)
+        for file_path in os.listdir(dir_path):
+            locale, ext = os.path.splitext(file_path)
+            if ext != '.xtb':
+                continue
+            self.import_xtb_file(path, file_path, locale)
+
+    def import_xtb_file(self, source_path, localse_path, locale):
+        # Collect a mapping of all sources to IDs.
+        sources_to_ids = {}
+        self.pod.logger.info('Importing -> {}'.format(locale_path))
+        tree = etree.ElementTree.parse(source_path)
+        msg_items = tree.findall('msg')
+        for item in msg_items:
+            source = item.text and item.text.strip()
+            msg_id = item.get('id')
+            sources_to_ids[source] = msg_id
+        # Create temporary PO catalogs and import them using `import_content`.
 
     def import_zip_file(self, zip_path):
         try:

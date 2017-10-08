@@ -46,6 +46,15 @@ class CatalogsTest(unittest.TestCase):
         de_catalog = self.pod.catalogs.get('de')
         self.assertIn('German Translation', de_catalog)
 
+    def test_import_xmb(self):
+        de_catalog = self.pod.catalogs.get('de')
+        self.assertNotIn('String 1 Translation', de_catalog)
+        path = testing.get_testdata_dir()
+        path_to_import = os.path.join(path, 'external', 'xtb', 'en.xmb')
+        self.pod.catalogs.import_translations(path_to_import)
+        de_catalog = self.pod.catalogs.get('de')
+        self.assertIn('String 1 Translation', de_catalog)
+
 
 if __name__ == '__main__':
     unittest.main()
