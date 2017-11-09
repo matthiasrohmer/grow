@@ -474,7 +474,8 @@ class Catalogs(object):
 
     def filter(self, out_path=None, out_dir=None,
                include_obsolete=True, localized=False,
-               paths=None, include_header=None, locales=None):
+               paths=None, exclude_paths=None,
+               include_header=None, locales=None):
         if localized and out_dir is None:
             raise UsageError('Must specify --out_dir when using --localized in '
                              'order to generate localized catalogs.')
@@ -484,7 +485,7 @@ class Catalogs(object):
         messages_to_locales = collections.defaultdict(list)
         for locale in locales:
             locale_catalog = self.get(locale)
-            missing_messages = locale_catalog.list_untranslated(paths=paths)
+            missing_messages = locale_catalog.list_untranslated(paths=paths, exclude_paths=exclude_paths)
             num_missing = len(missing_messages)
             num_total = len(locale_catalog)
             for message in missing_messages:

@@ -219,6 +219,7 @@ class CatalogsTest(unittest.TestCase):
         de_catalog = catalogs[0]
         self.assertEqual(3, len(de_catalog))
 
+        # Verify `paths` behavior.
         paths = [
             '/content/pages/yaml_test.html',
         ]
@@ -229,6 +230,24 @@ class CatalogsTest(unittest.TestCase):
             localized=False)
         de_catalog = catalogs[0]
         self.assertEqual(1, len(de_catalog))
+        # Located in /content/pages/yaml_test.yaml
+        self.assertIn('YAML Test', de_catalog)
+        # No location.
+        self.assertNotIn('Missing 1', de_catalog)
+
+        # Verify `exclude_paths` behavior.
+        exclude_paths = [
+            '/content/pages/yaml_test.html',
+        ]
+        exclude_paths = None
+        catalogs = self.pod.catalogs.filter(
+            out_path='./untranslated.po',
+            locales=locales,
+            exclude_paths=paths,
+            localized=False)
+        de_catalog = catalogs[0]
+        self.assertIn('Missing 1', de_catalog)
+        self.assertNotIn('YAML Test', de_catalog)
 
     def test_filter_localized(self):
         locales = ['de', 'fr']
