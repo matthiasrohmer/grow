@@ -21,8 +21,8 @@ class ExtractorTest(unittest.TestCase):
             'key': 'value',
             'foo@': 'bar',
         }
-        results = self.extract.extract_object(test_obj)
-        self.assertEqual(set(['bar']), set(results.messages))
+        self.extract.extract_object(test_obj)
+        self.assertEqual(set(['bar']), set(self.extract.results.messages))
 
     def test_object_comments(self):
         """Object extraction extracts comments correctly."""
@@ -38,10 +38,13 @@ class ExtractorTest(unittest.TestCase):
             'foo@': 'bar',
             'foo@#': 'bar comment',
         }
-        results = self.extract.extract_object(test_obj)
-        self.assertEqual(['value comment'], results.messages_to_meta['value']['comments'])
-        self.assertEqual(['bar comment'], results.messages_to_meta['bar']['comments'])
-        self.assertEqual(['other comment'], results.messages_to_meta['other']['comments'])
+        self.extract.extract_object(test_obj)
+        self.assertEqual(
+            ['value comment'], self.extract.results.messages_to_meta['value']['comments'])
+        self.assertEqual(
+            ['bar comment'], self.extract.results.messages_to_meta['bar']['comments'])
+        self.assertEqual(
+            ['other comment'], self.extract.results.messages_to_meta['other']['comments'])
 
     def test_object_nested_objects(self):
         """Object extraction extracts nested keys correctly."""
@@ -58,8 +61,9 @@ class ExtractorTest(unittest.TestCase):
             },
             'foo@': 'bar',
         }
-        results = self.extract.extract_object(test_obj)
-        self.assertEqual(set(['bar', 'value', 'foobar']), set(results.messages))
+        self.extract.extract_object(test_obj)
+        self.assertEqual(set(['bar', 'value', 'foobar']),
+                         set(self.extract.results.messages))
 
     def test_object_nested_arrays(self):
         """Object extraction extracts nested keys correctly."""
@@ -79,8 +83,10 @@ class ExtractorTest(unittest.TestCase):
                 },
             ],
         }
-        results = self.extract.extract_object(test_obj)
-        self.assertEqual(set(['foo', 'value', 'baz', 'trae', 'foobar']), set(results.messages))
+        self.extract.extract_object(test_obj)
+        self.assertEqual(
+            set(['foo', 'value', 'baz', 'trae', 'foobar']),
+            set(self.extract.results.messages))
 
 
 class ExtractedMessagesTest(unittest.TestCase):

@@ -29,25 +29,25 @@ class Extractor(object):
     TAG_EXTRACT = '@'
     TAG_COMMENT = '#'
 
-    def __init__(self, pod):
+    def __init__(self, pod, default_locale=None):
         self.pod = pod
-        self.results = ExtractedMessages()
+        self.results = ExtractedMessages(default_locale=default_locale)
 
-    def _deep_extract(self, results, item, source=None, is_parent_tagged=False, comment=None):
+    def _deep_extract(self, item, source=None, is_parent_tagged=False, comment=None):
         """Recursively extract an object into the results."""
 
         # String should have already been extracted if the key was tagged.
         if isinstance(item, basestring):
             # Values are tagged when the key is tagged.
             if is_parent_tagged:
-                results.add_message(item, source, comment=comment)
+                self.results.add_message(item, source, comment=comment)
             return
 
         # Handle arrays by going deeper and respecting the parent tagged state.
         if isinstance(item, collections.Sequence):
             for value in item:
                 self._deep_extract(
-                    results, value, source=source, comment=comment,
+                    value, source=source, comment=comment,
                     is_parent_tagged=is_parent_tagged)
             return
 
@@ -57,9 +57,9 @@ class Extractor(object):
             comment_key = '{}{}'.format(key, self.TAG_COMMENT)
             comment = item[comment_key] if comment_key in item else None
             self._deep_extract(
-                results, value, source=source, is_parent_tagged=is_tagged, comment=comment)
+                value, source=source, is_parent_tagged=is_tagged, comment=comment)
 
-    def extract_object(self, obj, source=None, default_locale=None):
+    def extract_object(self, obj, source=None):
         """Extract the translatable strings from an object.
 
         Translateable strings are tagged with an ending @ symbol.
@@ -67,9 +67,7 @@ class Extractor(object):
         Keys can be tagged with a locale and a trailing @ (ex: foo@es@) to be extracted as a
         translation of the base string (foo@).
         """
-        results = ExtractedMessages(default_locale=default_locale)
-        self._deep_extract(results, obj, source=source)
-        return results
+        self._deep_extract(obj, source=source)
 
     def extract_template(self, template):
         """Extract the translatable strings from a template."""
@@ -110,6 +108,21 @@ class ExtractedMessages(object):
         if pattern not in self.pattern_to_messages:
             self.pattern_to_messages[pattern] = {}
         self.pattern_to_messages[pattern][message] = translated
+
+    def get_catalog(self, locale):
+        """Retrieve a catalog of translations that match a given locale."""
+        translations = {}
+        locale = str(locale)
+
+        # Only return the translations that match the locale pattern to the
+        # locale.
+        for locale_pattern, messages in self.pattern_to_messages.iteritems():
+            locale_re = re.compile(locale_pattern)
+            if locale_re.search(locale):
+                for message, translation in messages.iteritems():
+                    translations[message] = translation
+
+        return translations
 
     def get_translations(self, locale):
         """Retrieve the translations that match a given locale."""
