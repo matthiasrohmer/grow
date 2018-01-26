@@ -24,6 +24,25 @@ class ExtractorTest(unittest.TestCase):
         results = self.extract.extract_object(test_obj)
         self.assertEqual(set(['bar']), set(results.messages))
 
+    def test_object_comments(self):
+        """Object extraction extracts comments correctly."""
+        test_obj = {
+            'key': {
+                'nested@': 'value',
+                'nested@#': 'value comment',
+                'other@#': 'other comment',
+                'other@': [
+                    'other',
+                ],
+            },
+            'foo@': 'bar',
+            'foo@#': 'bar comment',
+        }
+        results = self.extract.extract_object(test_obj)
+        self.assertEqual(['value comment'], results.messages_to_meta['value']['comments'])
+        self.assertEqual(['bar comment'], results.messages_to_meta['bar']['comments'])
+        self.assertEqual(['other comment'], results.messages_to_meta['other']['comments'])
+
     def test_object_nested_objects(self):
         """Object extraction extracts nested keys correctly."""
         test_obj = {
@@ -74,6 +93,22 @@ class ExtractedMessagesTest(unittest.TestCase):
         """Messages are part of the extracted string results."""
         self.results.add_message('foo')
         self.assertEqual(set(['foo']), set(self.results.messages))
+
+    def test_message_comment(self):
+        """Messages are part of the extracted string results."""
+        self.results.add_message('foo', comment='Super important')
+        self.assertEqual({
+            'locations': set(),
+            'comments': ['Super important'],
+        }, self.results.messages_to_meta['foo'])
+
+    def test_message_location(self):
+        """Messages are part of the extracted string results."""
+        self.results.add_message('foo', location='/source/something')
+        self.assertEqual({
+            'locations': set(['/source/something']),
+            'comments': [],
+        }, self.results.messages_to_meta['foo'])
 
     def test_translations(self):
         """Translations are part of the extracted results."""
