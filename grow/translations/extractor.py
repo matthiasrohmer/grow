@@ -1,5 +1,6 @@
 """Grow translation extractor."""
 
+import collections
 import re
 
 
@@ -25,11 +26,33 @@ class Extractor(object):
     ```
     """
 
+    TAG_CHARACTER = '@'
+
     def __init__(self, pod):
         self.pod = pod
         self.results = ExtractedMessages()
 
-    def extract_object(self, obj, source=None):
+    def _deep_extract(self, results, item, source=None, is_parent_tagged=False):
+        """Recursively extract an object into the results."""
+
+        # String should have already been extracted if the key was tagged.
+        if isinstance(item, basestring):
+            # Values are tagged when the key is tagged.
+            if is_parent_tagged:
+                results.add_message(item, source)
+            return
+
+        # Handle arrays by going deeper and respecting the parent tagged state.
+        if isinstance(item, collections.Sequence):
+            for value in item:
+                self._deep_extract(results, value, source=source, is_parent_tagged=is_parent_tagged)
+            return
+
+        for key, value in item.iteritems():
+            is_tagged = isinstance(key, basestring) and key.endswith(self.TAG_CHARACTER)
+            self._deep_extract(results, value, source=source, is_parent_tagged=is_tagged)
+
+    def extract_object(self, obj, source=None, default_locale=None):
         """Extract the translatable strings from an object.
 
         Translateable strings are tagged with an ending @ symbol.
@@ -37,7 +60,9 @@ class Extractor(object):
         Keys can be tagged with a locale and a trailing @ (ex: foo@es@) to be extracted as a
         translation of the base string (foo@).
         """
-        pass
+        results = ExtractedMessages()
+        self._deep_extract(results, obj, source=source)
+        return results
 
     def extract_template(self, template):
         """Extract the translatable strings from a template."""
@@ -47,21 +72,22 @@ class Extractor(object):
 class ExtractedMessages(object):
     """Results from the extraction process to retrieve extracted strings with locale support."""
 
-    def __init__(self):
-        self.meesages_to_locations = {}
+    def __init__(self, default_locale=None):
+        self.default_locale = default_locale
+        self.messages_to_locations = {}
         self.pattern_to_messages = {}
 
     @property
     def messages(self):
         """Messages that have been extracted."""
-        return self.meesages_to_locations.keys()
+        return self.messages_to_locations.keys()
 
     def add_message(self, message, location=None):
         """Add a message to the results."""
-        if message not in self.meesages_to_locations:
-            self.meesages_to_locations[message] = set()
+        if message not in self.messages_to_locations:
+            self.messages_to_locations[message] = set()
         if location:
-            self.meesages_to_locations[message].add(location)
+            self.messages_to_locations[message].add(location)
 
     def add_translation(self, pattern, message, translated):
         """Add a translation from the extraction."""

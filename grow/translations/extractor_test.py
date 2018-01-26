@@ -16,8 +16,52 @@ class ExtractorTest(unittest.TestCase):
         self.extract = extractor.Extractor(self.pod)
 
     def test_object(self):
-        """?"""
-        pass
+        """Object extraction extracts basic keys correctly."""
+        test_obj = {
+            'key': 'value',
+            'foo@': 'bar',
+        }
+        results = self.extract.extract_object(test_obj)
+        self.assertEqual(set(['bar']), set(results.messages))
+
+    def test_object_nested_objects(self):
+        """Object extraction extracts nested keys correctly."""
+        test_obj = {
+            'key': {
+                'nested@': 'value',
+                'other': 'valued',
+            },
+            'bar': {
+                'baz': {
+                    'bum': 'dum',
+                    'boo@': 'foobar',
+                },
+            },
+            'foo@': 'bar',
+        }
+        results = self.extract.extract_object(test_obj)
+        self.assertEqual(set(['bar', 'value', 'foobar']), set(results.messages))
+
+    def test_object_nested_arrays(self):
+        """Object extraction extracts nested keys correctly."""
+        test_obj = {
+            'key@': [
+                'value',
+                'foo',
+            ],
+            'bar': [
+                {
+                    'bum@': [
+                        'baz',
+                        'trae',
+                    ],
+                    'boo@': 'foobar',
+                    'tre': 'paz',
+                },
+            ],
+        }
+        results = self.extract.extract_object(test_obj)
+        self.assertEqual(set(['foo', 'value', 'baz', 'trae', 'foobar']), set(results.messages))
 
 
 class ExtractedMessagesTest(unittest.TestCase):
