@@ -38,6 +38,8 @@ class Extractor(object):
 
         # String should have already been extracted if the key was tagged.
         if isinstance(item, basestring):
+            if isinstance(item, unicode):
+                item = item.encode('utf-8')
             # Values are tagged when the key is tagged.
             if is_parent_tagged:
                 self.results.add_message(item, source, comment=comment)
@@ -153,3 +155,10 @@ class ExtractedMessages(object):
 # - Provided a path generator.
 # - Read each file.
 # - Use bable extraction on the template to find static strings.
+
+# Issues
+
+# Locales
+# - Podspec locales as all possible locales.
+# - Per object/template restriction on what locales the strings get saved to.
+# - Inline Localization: foo@fr@
